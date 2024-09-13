@@ -10,7 +10,7 @@ input_topic = 'image_input'
 output_topic = 'prediction_output'
 
 # Load the model
-model = load_model('dogcatclassifier.h5')
+model = load_model('Models/dogcatclassifier.h5')
 
 def preprocess_image(img_array):
     img_array = img_array.astype('float32') / 255.0

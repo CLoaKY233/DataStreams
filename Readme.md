@@ -1,160 +1,114 @@
-# Setting up Apache Kafka on Windows: A Comprehensive Guide
+# Kafka-based Real-time Image Classifier
 
-## 1. Prerequisites
+This project demonstrates a real-time cat/dog image classification system using Kafka and a pre-trained CNN model.
 
-Before we begin, ensure you have:
+## Prerequisites
 
-- Java installed (Java 8 or higher)
-- Windows PowerShell
-- Sufficient disk space (at least 1GB free)
+- Python 3.7+
+- Apache Kafka
+- Git
 
-## 2. Downloading and Extracting Kafka
+## Setup
 
-1. Visit the [Apache Kafka downloads page](https://kafka.apache.org/downloads).
-2. Look for the latest Scala 2.13 binary version (e.g., `kafka_2.13-3.8.0.tgz`).
-3. Download this file to your computer.
-4. Use a tool like 7-Zip to extract the `.tgz` file.
-5. Move the extracted folder to an easy-to-access location, like `C:\kafka\`.
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/kafka-image-classifier.git
+   cd kafka-image-classifier
+   ```
 
-Pro tip: Choose a location without spaces in the path to avoid potential issues.
+2. Set up Kafka:
+   Follow the instructions in [KafkaSetup.md](KafkaSetup.md) to install and configure Kafka.
 
-## 3. Configuring Kafka (Optional but Recommended)
+3. Create and activate a virtual environment:
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+   ```
 
-Kafka's default settings work fine for testing, but you might want to tweak them:
+4. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
 
-1. Open `C:\kafka\kafka_2.13-3.8.0\config\server.properties` in a text editor.
-2. Common settings you might adjust:
-   - `log.dirs`: Where Kafka stores its data
-   - `num.partitions`: Default number of partitions for new topics
-   - `log.retention.hours`: How long Kafka keeps messages
+5. Ensure `dogcatclassifier.h5` (the pre-trained model) is in the project root directory.
 
-Example:
-```properties
-log.dirs=C:/kafka-logs
-num.partitions=3
-log.retention.hours=168  # 1 week
+## Components
+
+The system consists of three main components:
+
+1. **Receiver-Predictor**: Processes images and makes predictions.
+2. **Sender**: Allows you to send images for classification.
+3. **Result Consumer**: (Optional) Displays classification results in real-time.
+
+## Usage
+
+### 1. Start the Receiver-Predictor
+
+In a terminal, run:
+```
+python receiver_predictor.py
 ```
 
-## 4. Starting the Kafka Environment
+This will continuously wait for images on the Kafka topic.
 
-### Launching ZooKeeper
+### 2. Run the Sender
 
-ZooKeeper is Kafka's trusty sidekick, handling coordination tasks.
+In another terminal, run:
+```
+python sender.py
+```
 
-1. Open PowerShell as Administrator
-2. Navigate to your Kafka folder:
-   ```powershell
-   cd C:\kafka\kafka_2.13-3.8.0
+- You'll be prompted to enter paths to image files.
+- Enter the full path to an image when prompted.
+- Type 'quit' to exit the sender program.
+
+### 3. (Optional) Run the Result Consumer
+
+To see predictions in real-time, open a third terminal and run:
+```
+python result_consumer.py
+```
+
+## Example Workflow
+
+1. Ensure Kafka is running (refer to KafkaSetup.md).
+
+2. Open three terminal windows and navigate to the project directory in each.
+
+3. In Terminal 1, start the receiver-predictor:
    ```
-3. Start ZooKeeper:
-   ```powershell
-   .\bin\windows\zookeeper-server-start.bat .\config\zookeeper.properties
-   ```
-
-Wait until you see a message like "binding to port 0.0.0.0/0.0.0.0:2181".
-
-### Firing up the Kafka Server
-
-Now, let's get Kafka itself running.
-
-1. Open a new PowerShell window as Administrator
-2. Navigate to your Kafka folder again
-3. Start Kafka:
-   ```powershell
-   .\bin\windows\kafka-server-start.bat .\config\server.properties
-   ```
-
-Wait for a message like "started (kafka.server.KafkaServer)".
-
-## 5. Creating Your First Topic
-
-Topics in Kafka are like folders in a file system – they help organize your data.
-
-1. Open another PowerShell window as Administrator
-2. Navigate to your Kafka folder
-3. Create a topic named "my-first-topic":
-   ```powershell
-   .\bin\windows\kafka-topics.bat --create --topic my-first-topic --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+   python receiver_predictor.py
    ```
 
-You should see: "Created topic my-first-topic".
-
-## 6. Producing Messages
-
-Let's send some messages to our new topic.
-
-1. In the same PowerShell window:
-   ```powershell
-   .\bin\windows\kafka-console-producer.bat --topic my-first-topic --bootstrap-server localhost:9092
+4. In Terminal 2, start the sender:
    ```
-2. You'll see a `>` prompt. Type a message and hit Enter. For example:
-   ```
-   > Hello, Kafka!
-   > This is my first message.
+   python sender.py
    ```
 
-Each line you type is a separate message sent to Kafka.
-
-## 7. Consuming Messages
-
-Now, let's read those messages back.
-
-1. Open one more PowerShell window as Administrator
-2. Navigate to your Kafka folder
-3. Start a consumer:
-   ```powershell
-   .\bin\windows\kafka-console-consumer.bat --topic my-first-topic --from-beginning --bootstrap-server localhost:9092
+5. (Optional) In Terminal 3, start the result consumer:
+   ```
+   python result_consumer.py
    ```
 
-You should see the messages you sent earlier appear here.
-
-## 8. Testing Your Setup
-
-1. Go back to your producer window (from step 6).
-2. Type more messages:
+6. In the sender terminal (Terminal 2), enter an image path when prompted:
    ```
-   > Kafka is working!
-   > This is so cool.
-   ```
-3. Watch these messages appear instantly in your consumer window.
-
-Congratulations! You've got a working Kafka setup.
-
-## 9. Shutting Down Safely
-
-When you're done experimenting:
-
-1. Stop the consumer and producer with Ctrl+C
-2. Stop the Kafka broker:
-   ```powershell
-   .\bin\windows\kafka-server-stop.bat
-   ```
-3. Stop ZooKeeper:
-   ```powershell
-   .\bin\windows\zookeeper-server-stop.bat
+   Enter the path to the image (or 'quit' to exit): /path/to/your/cat_image.jpg
    ```
 
-## Troubleshooting Tips
+7. View the results in Terminal 1 (receiver-predictor) or Terminal 3 (result consumer).
 
-- Java issues? Make sure `JAVA_HOME` is set correctly.
-- Port conflicts? Check if anything's using ports 2181 or 9092.
-- Weird errors? Look in `C:\kafka\kafka_2.13-3.8.0\logs` for clues.
+8. Repeat step 6 with different images as desired.
 
-## What's Actually Happening Here?
+9. Type 'quit' in Terminal 2 (sender) to exit.
 
-Imagine Kafka as a super-efficient post office:
+## Troubleshooting
 
-1. **Topics** are like PO boxes. They organize messages by subject.
-2. **Producers** are people sending letters (messages) to specific PO boxes.
-3. **Consumers** are the recipients, checking their PO boxes for new letters.
-4. **Brokers** (Kafka servers) are the postal workers, managing all these boxes and letters.
-5. **ZooKeeper** is like the post office manager, keeping everything running smoothly.
+- Verify Kafka is running correctly (check KafkaSetup.md).
+- Ensure `dogcatclassifier.h5` is present in the project root.
+- Verify all dependencies are installed (`pip list`).
+- Check that the image paths you enter exist and are accessible.
 
-When you send a message:
-1. The producer hands it to Kafka.
-2. Kafka stores it in the right topic (PO box).
-3. Consumers subscribed to that topic can then read it.
+## Customization
 
-The beauty of Kafka is it can handle millions of messages per second, keep them as long as you want, and distribute the workload across multiple servers seamlessly.
-
-By following this guide, you've set up a mini version of this powerful system on your own computer. Pretty cool, right?
+- To use a different model, replace `dogcatclassifier.h5` and update `receiver_predictor.py` if needed.
+- Kafka topics and server addresses can be modified in the scripts if required.
